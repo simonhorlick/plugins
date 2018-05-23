@@ -60,7 +60,8 @@
 @end
 
 @interface FLTCam : NSObject<FlutterTexture, AVCaptureVideoDataOutputSampleBufferDelegate,
-                             AVCaptureAudioDataOutputSampleBufferDelegate, FlutterStreamHandler>
+                             AVCaptureAudioDataOutputSampleBufferDelegate, FlutterStreamHandler,
+                             AVCaptureMetadataOutputObjectsDelegate>
 @property(readonly, nonatomic) int64_t textureId;
 @property(nonatomic, copy) void (^onFrameAvailable)();
 @property(nonatomic) FlutterEventChannel *eventChannel;
@@ -69,6 +70,7 @@
 @property(readonly, nonatomic) AVCaptureDevice *captureDevice;
 @property(readonly, nonatomic) AVCapturePhotoOutput *capturePhotoOutput;
 @property(readonly, nonatomic) AVCaptureVideoDataOutput *captureVideoOutput;
+@property(readonly, nonatomic) AVCaptureMetadataOutput *captureMetadataOutput;
 @property(readonly, nonatomic) AVCaptureInput *captureVideoInput;
 @property(readonly) CVPixelBufferRef volatile latestPixelBuffer;
 @property(readonly, nonatomic) CGSize previewSize;
@@ -139,6 +141,12 @@
   [_captureSession addConnection:connection];
   _capturePhotoOutput = [AVCapturePhotoOutput new];
   [_captureSession addOutput:_capturePhotoOutput];
+
+  _captureMetadataOutput = [AVCaptureMetadataOutput new];
+  [_captureMetadataOutput setMetadataObjectsDelegate:self queue:dispatch_get_main_queue()];
+  [_captureSession addOutput:_captureMetadataOutput];
+  _captureMetadataOutput.metadataObjectTypes = @[AVMetadataObjectTypeQRCode];
+
   return self;
 }
 
@@ -241,6 +249,18 @@
             [NSString stringWithFormat:@"%@", @"Unable to write to audio input"]
       });
     }
+  }
+}
+
+- (void)captureOutput:(AVCaptureOutput *)output
+    didOutputMetadataObjects:(NSArray<AVMetadataObject *> *)metadataObjects
+              fromConnection:(AVCaptureConnection *)connection
+{
+  for (AVMetadataObject *metadata in metadataObjects)
+  {
+    NSString *detectionString = [(AVMetadataMachineReadableCodeObject *)metadata stringValue];
+    NSLog(@"%@", detectionString);
+    // TODO(simon): Pass back to flutter.
   }
 }
 
