@@ -258,9 +258,11 @@
 {
   for (AVMetadataObject *metadata in metadataObjects)
   {
-    NSString *detectionString = [(AVMetadataMachineReadableCodeObject *)metadata stringValue];
-    NSLog(@"%@", detectionString);
-    // TODO(simon): Pass back to flutter.
+    NSString *data = [(AVMetadataMachineReadableCodeObject *)metadata stringValue];
+    _eventSink(@{
+       @"event" : @"barcode",
+       @"data" : data
+     });
   }
 }
 

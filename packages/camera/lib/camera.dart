@@ -115,6 +115,9 @@ class CameraValue {
 
   final String errorDescription;
 
+  /// Contains the contents of a scanned barcode or QR code.
+  final String barcodeData;
+
   /// The size of the preview in pixels.
   ///
   /// Is `null` until  [isInitialized] is `true`.
@@ -126,6 +129,7 @@ class CameraValue {
     this.previewSize,
     this.isRecordingVideo,
     this.isTakingPicture,
+    this.barcodeData,
   });
 
   const CameraValue.uninitialized()
@@ -147,6 +151,7 @@ class CameraValue {
     bool isTakingPicture,
     String errorDescription,
     Size previewSize,
+    String barcodeData,
   }) {
     return new CameraValue(
       isInitialized: isInitialized ?? this.isInitialized,
@@ -154,6 +159,7 @@ class CameraValue {
       previewSize: previewSize ?? this.previewSize,
       isRecordingVideo: isRecordingVideo ?? this.isRecordingVideo,
       isTakingPicture: isTakingPicture ?? this.isTakingPicture,
+      barcodeData: barcodeData,
     );
   }
 
@@ -164,6 +170,7 @@ class CameraValue {
         'isRecordingVideo: $isRecordingVideo, '
         'isInitialized: $isInitialized, '
         'errorDescription: $errorDescription, '
+        'barcodeData: $barcodeData, '
         'previewSize: $previewSize)';
   }
 }
@@ -237,6 +244,9 @@ class CameraController extends ValueNotifier<CameraValue> {
         break;
       case 'cameraClosing':
         value = value.copyWith(isRecordingVideo: false);
+        break;
+      case 'barcode':
+        value = value.copyWith(barcodeData: event['data']);
         break;
     }
   }
