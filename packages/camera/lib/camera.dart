@@ -238,7 +238,7 @@ class CameraController extends ValueNotifier<CameraValue> {
       return;
     }
 
-    switch (map['eventType']) {
+    switch (map['event']) {
       case 'error':
         value = value.copyWith(errorDescription: event['errorDescription']);
         break;
