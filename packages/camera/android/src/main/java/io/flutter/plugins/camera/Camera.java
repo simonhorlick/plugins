@@ -7,6 +7,7 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.ImageFormat;
+import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
@@ -22,6 +23,7 @@ import android.media.Image;
 import android.media.ImageReader;
 import android.media.MediaRecorder;
 import android.os.Build;
+import android.util.Log;
 import android.util.Size;
 import android.view.OrientationEventListener;
 import android.view.Surface;
@@ -60,6 +62,9 @@ public class Camera {
   private boolean recordingVideo;
   private CamcorderProfile recordingProfile;
   private int currentOrientation = ORIENTATION_UNKNOWN;
+
+  private Rect zoom;
+  protected CameraCharacteristics cameraCharacteristics;
 
   // Mirrors camera.dart
   public enum ResolutionPreset {
@@ -106,6 +111,7 @@ public class Camera {
         characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
     //noinspection ConstantConditions
     sensorOrientation = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
+    cameraCharacteristics = characteristics;
     //noinspection ConstantConditions
     isFrontFacing =
         characteristics.get(CameraCharacteristics.LENS_FACING) == CameraMetadata.LENS_FACING_FRONT;
@@ -249,6 +255,7 @@ public class Camera {
           cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
       captureBuilder.addTarget(pictureImageReader.getSurface());
       captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, getMediaOrientation());
+      setScalerCropRegion(captureBuilder, zoom);
 
       cameraCaptureSession.capture(
           captureBuilder.build(),
@@ -473,6 +480,38 @@ public class Camera {
           img.close();
         },
         null);
+  }
+
+  public void setZoom(double zoomLevel) throws CameraAccessException {
+    changeZoom(zoomLevel);
+  }
+
+  private void changeZoom(double zoomLevel) throws CameraAccessException {
+    calculateZoom(zoomLevel);
+    setScalerCropRegion(captureRequestBuilder, zoom);
+    cameraCaptureSession.setRepeatingRequest(captureRequestBuilder.build(), null, null);
+  }
+
+  private void calculateZoom(double zoomLevel) {
+    if (zoomLevel < 1f) {
+      zoomLevel = 1f;
+    }
+
+    Rect rect = cameraCharacteristics.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE);
+
+    double ratio = 1.0 / zoomLevel;
+    int croppedWidth = (int)(rect.width() - Math.round((double) rect.width() * ratio));
+    int croppedHeight = (int)(rect.height() - Math.round((double) rect.height() * ratio));
+    zoom =
+            new Rect(
+                    croppedWidth / 2,
+                    croppedHeight / 2,
+                    rect.width() - croppedWidth / 2,
+                    rect.height() - croppedHeight / 2);
+  }
+
+  private void setScalerCropRegion(CaptureRequest.Builder captureRequestBuilder, Rect zoom) {
+    captureRequestBuilder.set(CaptureRequest.SCALER_CROP_REGION, zoom);
   }
 
   private void closeCaptureSession() {

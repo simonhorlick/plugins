@@ -569,6 +569,12 @@ class CameraController extends ValueNotifier<CameraValue> {
     }
   }
 
+  /// Set the zoom ratio.
+  Future<void> zoom(double value) async {
+    await _channel
+        .invokeMethod<void>('zoom', <String, dynamic>{'value': value});
+  }
+
   /// Releases the resources of this camera.
   @override
   Future<void> dispose() async {
