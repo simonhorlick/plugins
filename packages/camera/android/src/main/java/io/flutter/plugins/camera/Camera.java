@@ -493,11 +493,17 @@ public class Camera {
   }
 
   private void calculateZoom(double zoomLevel) {
+    Rect rect = cameraCharacteristics.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE);
+
+    double maxZoom = cameraCharacteristics.get(
+            CameraCharacteristics.SCALER_AVAILABLE_MAX_DIGITAL_ZOOM);
+    if (zoomLevel > maxZoom) {
+      zoomLevel = maxZoom;
+    }
+
     if (zoomLevel < 1f) {
       zoomLevel = 1f;
     }
-
-    Rect rect = cameraCharacteristics.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE);
 
     double ratio = 1.0 / zoomLevel;
     int croppedWidth = (int)(rect.width() - Math.round((double) rect.width() * ratio));
